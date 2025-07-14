@@ -5,6 +5,9 @@ from google_authenticator import generate_totp
 
 from diskcache import Cache as DiskCache
 
+from urllib.parse import urlparse, parse_qs, urlencode, urlunparse
+from typing import Dict, Optional
+
 # Defining constants
 BASE_URL = "http://192.168.1.8:8899/example/v1"
 USERNAME = "username"
@@ -27,6 +30,29 @@ logger = logging.getLogger(__name__)
 
 logger.info("script started")
 
+# Append query parameter key-value pairs to the URL.
+def url_query_params(url :str, params: Optional[Dict] = None) -> str:
+	if not url.startswith(BASE_URL):
+		url = f"{BASE_URL}{url}"
+	if params is None:
+		return url
+	parsed_url = urlparse(url)
+	query_params = parse_qs(parsed_url.query)
+	for key, value in params.items():
+		if isinstance(value, (list,set)):
+			query_params[key] = value
+		else:
+			query_params[key] = [str(value)]
+	new_query = urlencode(query_params, doseq=True)
+	new_url = urlunparse((
+		parsed_url.scheme,
+		parsed_url.netloc,
+		parsed_url.path,
+		parsed_url.params,
+		new_query,
+		parsed_url.fragment
+	))
+	return new_url
 
 class TestPublicApi:
 	"""Testing interfaces that do not require authentication"""
@@ -69,8 +95,7 @@ class TestPrivateApi:
 				"password": PASSWORD,
 				"google_verify_code": generate_totp(GOOGLE_AUTH_SECRET),
 			}
-			url = f"{BASE_URL}/login"
-			response = requests.post(url, json=login_data, headers=self.headers)
+			response = requests.post(url_query_params("/login"), json=login_data, headers=self.headers)
 			assert response.status_code == 200, f"Login failed: {response.text}"
 			data = response.json()
 			token = data['data']['token']
@@ -80,7 +105,7 @@ class TestPrivateApi:
 
 	def test_get_profile(self):
 		"""Get the current user's personal information"""
-		response = requests.get(f"{BASE_URL}/profile", json=self.user_data, headers=self.headers)
+		response = requests.get(url_query_params("/profile"), json=None, headers=self.headers)
 		assert response.status_code == 200, f"Failed to obtain the current user's personal information:{response}"
 		# logger.info(response.text)
 		# logger.info(response.json()['data'])
