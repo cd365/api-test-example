@@ -39,7 +39,7 @@ def url_query_params(url :str, params: Optional[Dict] = None) -> str:
 	parsed_url = urlparse(url)
 	query_params = parse_qs(parsed_url.query)
 	for key, value in params.items():
-		if isinstance(value, (list,set)):
+		if isinstance(value, (list, set)):
 			query_params[key] = value
 		else:
 			query_params[key] = [str(value)]
