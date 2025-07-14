@@ -3,7 +3,7 @@ import pytest
 import requests
 from diskcache import Cache as DiskCache
 from google_authenticator import generate_totp
-from typing import Dict, Optional
+from typing import Any, Dict, Optional
 from urllib.parse import urlparse, parse_qs, urlencode, urlunparse
 
 # Defining constants
@@ -121,6 +121,26 @@ class TestPrivateApi:
 		})
 		response = requests.get(url_query_params("/order/list", query), headers=self.headers)
 		assert response.status_code == 200, f"Order list query failed:{response.text}"
+
+	def test_put_example(self):
+		query_params: Dict[str, Any] = {"key1": "value1", "key2": ["value2", "value3"]}
+		headers: Dict[str, str] = {"Authorization": "Bearer token123", "Content-Type": "application/json"}
+		body_form: Dict[str, Any] = {"field1": "value1", "field2": "value2"}
+		requests.put(
+			url_query_params("/example"),
+			params=query_params,
+			data=body_form, # body data
+    		headers=headers,
+		)
+
+	def test_delete_example(self):
+		headers: Dict[str, str] = {"Authorization": "Bearer token123", "Content-Type": "application/json"}
+		body_json: Dict[str, Any] = {"reason": "Obsolete resource"}
+		requests.delete(
+			url_query_params("/example"),
+			json=body_json,  # body data
+			headers=headers,
+		)
 
 if __name__ == "__main__":
 	pytest.main(["-v", "--html=report.html"])
