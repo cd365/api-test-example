@@ -1,12 +1,10 @@
-import requests
-import pytest
 import logging
-from google_authenticator import generate_totp
-
+import pytest
+import requests
 from diskcache import Cache as DiskCache
-
-from urllib.parse import urlparse, parse_qs, urlencode, urlunparse
+from google_authenticator import generate_totp
 from typing import Dict, Optional
+from urllib.parse import urlparse, parse_qs, urlencode, urlunparse
 
 # Defining constants
 BASE_URL = "http://192.168.1.8:8899/example/v1"
@@ -38,12 +36,14 @@ def url_query_params(url :str, params: Optional[Dict] = None) -> str:
 		return url
 	parsed_url = urlparse(url)
 	query_params = parse_qs(parsed_url.query)
+	result :Dict[str:str] = {}
+	for key, value in query_params.items():
+		if value is not None:
+			result[key] = ",".join(value)
 	for key, value in params.items():
-		if isinstance(value, (list, set)):
-			query_params[key] = value
-		else:
-			query_params[key] = [str(value)]
-	new_query = urlencode(query_params, doseq=True)
+		if value is not None:
+			result[key] = str(value)
+	new_query = urlencode(result, doseq=True)
 	new_url = urlunparse((
 		parsed_url.scheme,
 		parsed_url.netloc,
@@ -76,6 +76,8 @@ class TestPublicApi:
 class TestPrivateApi:
 	"""Testing interfaces that require authentication"""
 
+	limit_offset: Dict[str, None|float|int|str] = {"limit": 20, "offset": 0}
+
 	def setup_method(self):
 		"""Initialization: Get Token and set request header"""
 
@@ -105,11 +107,20 @@ class TestPrivateApi:
 
 	def test_get_profile(self):
 		"""Get the current user's personal information"""
-		response = requests.get(url_query_params("/profile"), json=None, headers=self.headers)
-		assert response.status_code == 200, f"Failed to obtain the current user's personal information:{response}"
+		response = requests.get(url_query_params("/profile"), headers=self.headers)
+		assert response.status_code == 200, f"Failed to obtain the current user's personal information:{response.text}"
 		# logger.info(response.text)
 		# logger.info(response.json()['data'])
 
+	def test_get_order_list(self):
+		query = self.limit_offset.copy()
+		query.update({
+			"page": 1,
+			"limit": 100,
+			"keyword": "test",
+		})
+		response = requests.get(url_query_params("/order/list", query), headers=self.headers)
+		assert response.status_code == 200, f"Order list query failed:{response.text}"
 
 if __name__ == "__main__":
 	pytest.main(["-v", "--html=report.html"])
