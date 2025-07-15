@@ -20,10 +20,10 @@ def generate_totp(secret, interval=30, digits=6):
 
     # Dynamic truncation
     offset = hash_result[-1] & 0x0F
-    binary = struct.unpack(">I", hash_result[offset:offset + 4])[0] & 0x7FFFFFFF
+    binary = struct.unpack(">I", hash_result[offset : offset + 4])[0] & 0x7FFFFFFF
 
     # Generate a verification code with a specified number of digits
-    code = binary % (10 ** digits)
+    code = binary % (10**digits)
     return f"{code:0{digits}d}"
 
 

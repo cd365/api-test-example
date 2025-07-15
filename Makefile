@@ -1,4 +1,4 @@
-.PHONY: init install run clean-cache
+.PHONY: init install fmt run clean-cache
 
 all: run
 
@@ -8,7 +8,10 @@ init:
 	python -m venv .venv
 
 install:
-	.venv/bin/pip install requests pytest pytest-html diskcache
+	.venv/bin/pip install requests pytest pytest-html diskcache black
+
+fmt:
+	.venv/bin/black .
 
 run:
 	.venv/bin/pytest main.py -v --html=report.html --log-cli-level=INFO
