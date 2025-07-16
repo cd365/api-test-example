@@ -6,6 +6,9 @@ import struct
 
 
 def generate_totp(secret, interval=30, digits=6):
+    # Complete the padding of the Base32 key (if necessary)
+    secret = secret + "=" * (8 - len(secret) % 8) if len(secret) % 8 != 0 else secret
+
     # Decode the Base32 key
     key = base64.b32decode(secret, casefold=True)
 
